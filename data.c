@@ -25,7 +25,7 @@ void init(struct Lords *pl, struct Map m[MAXH][MAXH]);
 
 
 
-/*randum distribution of lords' and Map's sources*/
+/*random distribution of lords' and Map's sources*/
 void init(struct Lords *pl, struct Map m[MAXH][MAXH]){         
 	int i,j,num = 0;
 	int temp;
