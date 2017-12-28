@@ -8,9 +8,11 @@
 struct Lords{
 	int force;
 	int wealth;
-	int tech;           //techpoints
+	int tech;               //techpoints
 	char own[MAXH][MAXH];
-	char ally[MAX];   // allies: ally 0; Enemy 1; Neutral 2;
+	char ally[MAX];         // allies: ally 1; Enemy -1; Neutral 0;
+	char cond;              //condition = ally + enemy + nutral;
+	char rank;              //rank
 	
 } lords[MAX];
 
@@ -19,6 +21,9 @@ struct Map{
 	int pop;        // population
 	char status;    // the land' status : to whom it belongs
 } map[MAXH][MAXH];
+
+int r[2][MAX]; //first row: power; second row: corresponding lords
+
 
 void datashuffle(struct Map a[MAXH][MAXH]);
 void init(struct Lords *pl, struct Map m[MAXH][MAXH]);
@@ -34,7 +39,7 @@ void init(struct Lords *pl, struct Map m[MAXH][MAXH]){
 		for(j=0;j<MAXH;j++){
 			m[i][j].res = rand() % 10000 + 10000;
 			m[i][j].pop = rand() % 10000 + 10000;
-			m[i][j].status = num++;
+			r[2][num] = m[i][j].status = num++;
 		}
 	}
 	datashuffle(m);
