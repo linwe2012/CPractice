@@ -1,5 +1,5 @@
 #include<stdlib.h>
-#include"data.c"
+#include"data.cpp"
 #define RATE 0.1
 
 /*Major Functions*/

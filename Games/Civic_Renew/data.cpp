@@ -1,5 +1,6 @@
 #include<stdlib.h>
 
+
 #define MAX 100
 #define MAXH 10
 
@@ -88,15 +89,4 @@ void lanass(struct Map a[MAXH][MAXH],struct Lords b[MAX]){
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
 
