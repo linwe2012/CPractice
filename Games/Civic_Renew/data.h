@@ -7,7 +7,7 @@ extern struct Lords{
 	int force;
 	int wealth;
 	int tech;               //techpoints
-	int own[MAX];          //land owned = x + y*100
+	int own[MAX];          //land owned = x + y*100 + 1
 	char ally[MAX];         // allies: ally 1; Enemy -1; Neutral 0;
 	char cond;              //condition = ally + enemy + nutral;
 	char rank;              //rank
@@ -21,6 +21,7 @@ extern struct Map{
 } map[MAXH][MAXH];
 
 extern int r[2][MAX]; 
+extern char survivor;
 void datashuffle(struct Map a[MAXH][MAXH]);
 void init(struct Lords *pl, struct Map m[MAXH][MAXH]);
 

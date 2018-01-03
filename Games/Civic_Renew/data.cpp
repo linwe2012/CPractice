@@ -1,5 +1,5 @@
 #include<stdlib.h>
-
+#include<graphics.h>
 
 #define MAX 100
 #define MAXH 10
@@ -25,7 +25,7 @@ struct Map{
 } map[MAXH][MAXH];
 
 int r[2][MAX]; //first row: power; second row: corresponding lords
-
+char survivor = MAX;
 
 void datashuffle(struct Map a[MAXH][MAXH]);
 void init(struct Lords *pl, struct Map m[MAXH][MAXH]);
@@ -38,10 +38,11 @@ void init(struct Lords *pl, struct Map m[MAXH][MAXH]){
 	int temp;
 	int lor;
 	
+	randomize();
 	for(i=0;i<MAXH;i++){
 		for(j=0;j<MAXH;j++){
-			m[i][j].res = rand() % 10000 + 10000;
-			m[i][j].pop = rand() % 10000 + 10000;
+			m[i][j].res = random(10000) + 10000;
+			m[i][j].pop = random(10000) + 10000;
 			for(k = 0;k<MAX;k++)
 				(pl + i + j)->own[k] = 0; 
 			r[1][num] = m[i][j].status = num++;
@@ -54,23 +55,23 @@ void init(struct Lords *pl, struct Map m[MAXH][MAXH]){
 		for(j=0;j<MAXH;j++){
 			lor = m[i][j].status;
 			m[i][j].force = (pl + lor)->force = rand() % 100 + 50;
-			(pl + lor)->own[0] = i + j*100;
-			(pl + lor)->wealth = rand() % 100 +50;
-			(pl + lor)->tech = rand() % 10 + 5;
+			(pl + lor)->own[0] = i + j*100+1;
+			(pl + lor)->wealth = random(100) +50;
+			(pl + lor)->tech = random(10) + 5;
 		}
 	}
 
-	
 }
 
 /*shuffle lands lords own*/ 
 void datashuffle(struct  Map a[MAXH][MAXH]){
+	randomize();
 	int i,r1,r2,j;
 	char swap;
 	for(i=0;i<MAXH;i++){
 		for(j=0;j<MAXH;j++){
-			r1 = rand() % MAXH;
-			r2 = rand() % MAXH;
+			r1 = random(MAXH);
+			r2 = random(MAXH);
 			swap = a[i][j].status;
 			a[i][j].status = a[r1][r2].status;
 			a[r1][r2].status = swap;
@@ -89,4 +90,6 @@ void lanass(struct Map a[MAXH][MAXH],struct Lords b[MAX]){
 		}
 	}
 }
+
+
 
