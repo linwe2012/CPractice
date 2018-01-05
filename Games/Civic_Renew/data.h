@@ -20,6 +20,8 @@ extern struct Map{
 	int force;      //army on the land;
 } map[MAXH][MAXH];
 
+extern int playerally[MAXH][MAXH];
+extern int color[2][16];
 extern int r[2][MAX]; 
 extern char survivor;
 void datashuffle(struct Map a[MAXH][MAXH]);

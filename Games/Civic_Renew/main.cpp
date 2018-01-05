@@ -8,17 +8,23 @@
 #define GAPI 45  
 #define GAPJ 59
 
+
+/*color here*/
+#define BGCOLOR 0xE0E0E0
+#define LIGHTGREY 0x9E9E9E
+
+
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
 void inidraw(struct Lords *pl, int player);
 void update(struct Lords *pl,int player);
 void status_check(int *x,int *y,struct Lords *pl,int player);
-
+MOUSEMSG msgshare;            //shared mouse msg
 
 int main(int argc, char** argv) {
 	int player;
 	int attackin_x,attacking_y;
 	initgraph(WIDTH,HIGH);
-	setbkcolor(EGERGB(0xE0, 0xE0, 0xE0));
+	setbkcolor(BGCOLOR);
 	
 	init(lords,map);
 	rank(lords);
@@ -32,31 +38,58 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
+void update_title(struct Lords *pl,int player);
+void update_force_one(int x,int y,struct Lords *pl,int player);
 
 void inidraw(struct Lords *pl, int player){
 	int i,j,a,b;
-	player = 0;
-	int gapi = (WIDTH - 30) / MAXH;
-	int gapj = (HIGH - 50) / MAXH;
+	int pos = (pl + player)->own[0];
+	pos --;
 	setfillstyle(SOLID_FILL,0x9E9E9E);
-	for(i=10,a=0;i<WIDTH - gapi;i+= gapi + 1,a++){
-		for(j=50,b=0;j<HIGH - gapj;j+=gapj + 1,b++){
-			if(a+b*100 + 1== (pl + player)->own[0]){
+	outtextrect(WIDTH-100,25,90,25,"Diplomacy");
+	for(i=10,a=0;i<WIDTH - GAPI;i+= GAPI + 1,a++){
+		for(j=50,b=0;j<HIGH - GAPJ;j+=GAPJ + 1,b++){
+			if(a+b*100 == pos){
 				setfillstyle(SOLID_FILL,EGERGB(0x21, 0x96, 0xF3));
-				bar(i,j,i+gapi,j+gapj);
+				bar(i,j,i+GAPI,j+GAPJ);
 				setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
 			}
 			else
-				bar(i,j,i+gapi,j+gapj);
+				bar(i,j,i+GAPI,j+GAPJ);
 		}
 	}
-	outtextrect(WIDTH/3+35,HIGH-20,WIDTH,HIGH-5,"All rights reserved by Jakiro & Leon");
+	outtextrect(WIDTH/3+35,HIGH-20,WIDTH,HIGH-5,"Jakiro & Leon. All rights reserved.");
+	settextjustify(CENTER_TEXT, TOP_TEXT);
+	outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul");
+	i = pos % 100;
+	j = pos / 100;
+	update_force_one(i,j,pl,player);
+}
+
+void update_title(struct Lords *pl,int player){
+	char s[50];
+	setcolor(EGERGB(0x42, 0x42, 0x42));
+	setfontbkcolor(BGCOLOR);
+	settextjustify(CENTER_TEXT, TOP_TEXT);
+	sprintf(s, "Force: %d      Currency: %d      Tech: %d      rank:%d",(pl + player)->force,(pl + player)->wealth,(pl + player)->tech,(pl + player)->rank);
+	outtextxy(WIDTH/2,4,s);
+}
+void update_force_one(int x,int y,struct Lords *pl,int player){
+	int force;
+	force = map[x][y].force;
+	char s[50];
+	setfillstyle(SOLID_FILL,EGERGB(0x21, 0x96, 0xF3));
+	x = 10 + x * GAPI1;
+	y = 50 + y * GAPJ1;
+	bar(x,y,x+GAPI,y+GAPJ);
+	sprintf(s, "%d",force);
+	outtextxy((x+GAPI)/2,(y + GAPJ)/2,s);
 }
 
 void update(struct Lords *pl,int player){
 	char s[50];
 	setcolor(EGERGB(0x42, 0x42, 0x42));
-	setfontbkcolor(EGERGB(0xE0, 0xE0, 0xE0));
+	setfontbkcolor(BGCOLOR);
 	settextjustify(CENTER_TEXT, TOP_TEXT);
 	sprintf(s, "Force: %d      Currency: %d      Tech: %d      rank:%d",(pl + player)->force,(pl + player)->wealth,(pl + player)->tech,(pl + player)->rank);
 	outtextxy(WIDTH/2,4,s);
@@ -82,43 +115,244 @@ void translate_to_relative_position(int *x,int *y){
 int mouse_translate(int x,int y,struct Lords *pl,int player){
 	int i;
 	int pos = x + y*100 + 1;
+	int realpos;
 	for(i=0;i<MAX;i++){
-		if((pl+player)->own[i] == pos)
+		realpos = (pl + player)->own[i];
+		if(realpos == pos)
 			return 1;
-		else if((pl + player)->own[i] == pos + 100 || (pl + player)->own[i] == pos - 100 || (pl + player)->own[i] == pos + 1||(pl + player)->own[i] == pos -1){
+		else if(realpos == pos + 100 || realpos == pos - 100 || realpos == pos + 1||realpos == pos -1){
 			return 0;
 		}
-		else if((pl + player)->own[i] == pos + 101 || (pl + player)->own[i] == pos + 99 || (pl + player)->own[i] == pos - 101||(pl + player)->own[i] == pos -99){
+		else if(realpos == pos + 101 || realpos == pos + 99 || realpos == pos - 101||realpos == pos -99){
 			return 0;
 		}
-		else if((pl + player)->own[i] == 0){
+		else if(realpos == 0){
+			return -1;
+		}
+		else if(0);
+	}
+}
+
+int more_mouse_translate(int x,int y,struct Lords *pl,int player){
+	int i;
+	int pos;
+	int realpos;
+	if((x>=WIDTH-100 && x<=WIDTH) && (y>=10 && y<= 50))
+		return 2;
+	x = (x - 10)/GAPI;
+	y = (y - 50)/GAPJ;
+	pos = x + y*100 + 1;
+	for(i=0;i<MAX;i++){
+		realpos = (pl + player)->own[i];
+		if(realpos == pos)
+			return 1;
+		else if(realpos == pos + 100 || realpos == pos - 100 || realpos == pos + 1||realpos == pos -1){
+			return 0;
+		}
+		else if(realpos == pos + 101 || realpos == pos + 99 || realpos == pos - 101||realpos == pos -99){
+			return 0;
+		}
+		else if(realpos == 0){
 			return -1;
 		}
 	}
 }
-//
-int integreted_mouse_translate(int x,int y,struct Lords *pl,int player){
-	int i;
-	int pos = x + y*100 + 1;
-	for(i=0;i<MAX;i++){
-		if((pl+player)->own[i] == pos)
-			return 1;
-		else if((pl + player)->own[i] == pos + 100 || (pl + player)->own[i] == pos - 100 || (pl + player)->own[i] == pos + 1||(pl + player)->own[i] == pos -1){
-			return 0;
+
+
+int simple_mouse_translate(int x,int y){
+	if((x>=WIDTH-100 && x<=WIDTH) && (y>=10 && y<= 50))
+		return 2;
+	else return 0;
+}
+
+void show_diplomacy(){
+	int i,j;
+	int a,b;
+	MOUSEMSG msg;
+	for(i=10,a=0;i<WIDTH - GAPI;i+= GAPI + 1,a++){
+		for(j=50,b=0;j<HIGH - GAPJ;j+=GAPJ + 1,b++){
+			if(playerally[a][b] == -1){
+				setfillstyle(SOLID_FILL,0xC62828);
+				bar(i,j,i+GAPI,j+GAPJ);
+			}
+			else if(playerally[a][b] == 1){
+				setfillstyle(SOLID_FILL,0x2E7D32);
+				bar(i,j,i+GAPI,j+GAPJ);
+			}	
 		}
-		else if((pl + player)->own[i] == pos + 101 || (pl + player)->own[i] == pos + 99 || (pl + player)->own[i] == pos - 101||(pl + player)->own[i] == pos -99){
-			return 0;
+	}
+	for(; is_run(); delay_fps(120)){
+		if(mousemsg() && (msg = GetMouseMsg()).uMsg == WM_LBUTTONDOWN){
+			if(simple_mouse_translate(msg.x,msg.y)){
+				setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
+				for(i=10,a=0;i<WIDTH - GAPI;i+= GAPI + 1,a++){
+					for(j=50,b=0;j<HIGH - GAPJ;j+=GAPJ + 1,b++){
+						if(playerally[a][b] == 2){
+							setfillstyle(SOLID_FILL,EGERGB(0x21, 0x96, 0xF3));
+							bar(i,j,i+GAPI,j+GAPJ);
+							setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
+						}
+						else
+							bar(i,j,i+GAPI,j+GAPJ);
+					}
+				}
+				return;
+			}
 		}
-		else if((pl + player)->own[i] == 0){
-			return -1;
+	}
+}
+void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
+	int keyboardmsg;
+	MOUSEMSG msg;
+	int x,y;
+	register int msg_x,msg_y;
+	register int omsg_x,omsg_y;
+	int pos_status;
+	int pos;
+	int adder;
+	int pos1 = ox + oy*100 +1;
+	int pos2;
+	int flag = 0;
+	
+	setfillstyle(SOLID_FILL,BGCOLOR);
+	bar(0,HIGH - 45,WIDTH,HIGH - 25);
+	outtextxy(WIDTH/2,HIGH - 45,"Press Enter to Cancel Selection. Careful! You can't undo.'");
+	while(1){
+	for(; is_run(); delay_jfps(100))
+		{
+			if(kbhit() && ((keyboardmsg = getch()) == 'm' || keyboardmsg == 'M')){
+				setcolor(LIGHTGREY);
+				outtextxy(WIDTH/2,HIGH - 45,"Too lazy to write it. Figure it out yourself! Auf Wiedersehen!");
+				while((msg = GetMouseMsg()).uMsg != WM_LBUTTONDOWN )
+					;
+				setfillstyle(SOLID_FILL,BGCOLOR);
+				bar(0,HIGH - 45,WIDTH,HIGH - 25);
+				outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
+				continue;
+			}
+			else if(keyboardmsg == '\n'){
+				bar(0,HIGH - 45,WIDTH,HIGH - 25);
+				outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
+				return;
+			}
+			else if(keyboardmsg == ' '){
+				adder = 1;
+				if((pl+player)->wealth > 0){
+						(pl+player)->force += adder;
+						map[ox][oy].force += adder;
+						(pl+player)->wealth -= adder;
+						update_title(pl,player);
+						 update_force_one(ox,oy,pl,player);
+					}
+				else
+					continue;
+				for(; is_run() && keystate(' '); delay_fps(30))
+				{
+					if((pl+player)->wealth > 0){
+						(pl+player)->force += adder;
+						map[ox][oy].force += adder;
+						(pl+player)->wealth -= adder;
+						update_title(pl,player);
+					}
+					else
+						break;
+					
+				}
+			}
+			if(mousemsg() && (msg = GetMouseMsg()).uMsg == WM_LBUTTONDOWN)
+				break;
+			if(msg.x == ox && msg.y ==oy)
+				continue;
+			msg_x = (msg.x - 10)/GAPI;
+			msg_y = (msg.y - 50)/GAPJ;
+			
+			pos_status = mouse_translate(msg_x,msg_y,pl,player);
+			
+			msg_x = 10 + msg_x * GAPI1;
+			msg_y = 50 + msg_y * GAPJ1; // translate into real position
+			
+			if( (pos_status == 0 || pos_status == 1)&& (!flag || (omsg_x != msg_x || omsg_y != msg_y)  )){
+				flag = 1;
+				setfillstyle(SOLID_FILL,0x90CAF9);
+				bar(msg_x,msg_y,msg_x+GAPI,msg_y+GAPJ);
+				
+				if(pos_status){
+					setfillstyle(SOLID_FILL,0x1976D2);	
+				}
+				else
+					setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
+				bar(omsg_x,omsg_y,omsg_x+GAPI,omsg_y+GAPJ);
+				
+				omsg_x = msg_x;
+				omsg_y = msg_y;
+			}
+			else if(flag && pos_status == -1){
+				flag = 0;
+				setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
+				bar(omsg_x,omsg_y,omsg_x+GAPI,omsg_y+GAPJ);
+				omsg_x = msg_x;
+				omsg_y = msg_y;
+			}
 		}
+		x = msg.x;
+		y = msg.y;
+		pos = more_mouse_translate(x,y,pl,player);
+		if(pos == 2){
+			show_diplomacy();
+			continue;
+		}
+		else if(pos == 1){
+			adder = 1;
+			msg_x = (msg.x - 10)/GAPI;
+			msg_y = (msg.y - 50)/GAPJ;
+			if(map[ox][oy].force >= adder){
+				map[ox][oy].force -= adder;
+				map[msg_x][msg_y].force += adder;
+				adder ++;
+				 update_force_one(ox,oy,pl,player);
+				 update_force_one(msg_x,msg_y,pl,player);
+			}
+			else{
+				map[ox][oy].force = 0;
+				map[msg_x][msg_y].force +=1;
+				update_force_one(ox,oy,pl,player);
+				 update_force_one(msg_x,msg_y,pl,player);
+				continue;
+				}
+			for(; is_run() && mousemsg() && (msg = GetMouseMsg()).uMsg != WM_LBUTTONUP ; delay_jfps(30)){
+					if(map[ox][oy].force >= adder){
+						map[ox][oy].force -= adder;
+						map[msg_x][msg_y].force += adder;
+						adder ++;
+						update_force_one(ox,oy,pl,player);
+				 		update_force_one(msg_x,msg_y,pl,player);
+					}
+					else{
+						adder = map[ox][oy].force;
+						map[ox][oy].force = 0;
+						map[msg_x][msg_y].force += adder;
+						update_force_one(ox,oy,pl,player);
+				 		update_force_one(msg_x,msg_y,pl,player);
+						break;
+					}
+				
+			}
+		}
+		else if(pos == 0){
+			;
+		}
+		
 	}
 }
 ///////////////////////////////////////////////////////////
 
+
+
 void status_check(int *x,int *y,struct Lords *pl,int player){
 	MOUSEMSG msg;
+	int keyboardmsg;
 	int pos_status;
+	int last_pos_status = 0;
 	int relative_x,relative_y,real_x,real_y;
 	int old_x = (pl+player)->own[0] % 100;   //position for owned lands
 	int old_y = (pl+player)->own[0] / 100;
@@ -131,6 +365,16 @@ void status_check(int *x,int *y,struct Lords *pl,int player){
 		
 		for(; is_run(); delay_fps(120))
 		{
+			if(kbhit() && ((keyboardmsg = getch()) == 'm' || keyboardmsg == 'M')){
+				setcolor(LIGHTGREY);
+				outtextxy(WIDTH/2,HIGH - 45,"Too lazy to write it. Figure it out yourself! Auf Wiedersehen!");
+				while((msg = GetMouseMsg()).uMsg != WM_LBUTTONDOWN )
+					;
+				setfillstyle(SOLID_FILL,BGCOLOR);
+				bar(0,HIGH - 45,WIDTH,HIGH - 25);
+				outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
+				continue;
+			}
 			if(mousemsg() && (msg = GetMouseMsg()).uMsg == WM_LBUTTONDOWN)
 				break;
 			msg_x = (msg.x - 10)/GAPI;
@@ -144,10 +388,10 @@ void status_check(int *x,int *y,struct Lords *pl,int player){
 			if( pos_status == 0 && (!flag || (omsg_x != msg_x || omsg_y != msg_y)  )){
 				flag = 1;
 				setfillstyle(SOLID_FILL,0x90CAF9);
-				bar(msg_x,msg_y,msg_x+gapi,msg_y+gapj);
+				bar(msg_x,msg_y,msg_x+GAPI,msg_y+GAPJ);
 				
 				setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
-				bar(omsg_x,omsg_y,omsg_x+gapi,omsg_y+gapj);
+				bar(omsg_x,omsg_y,omsg_x+GAPI,omsg_y+GAPJ);
 				
 				omsg_x = msg_x;
 				omsg_y = msg_y;
@@ -155,7 +399,7 @@ void status_check(int *x,int *y,struct Lords *pl,int player){
 			else if(flag && pos_status == -1){
 				flag = 0;
 				setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
-				bar(omsg_x,omsg_y,omsg_x+gapi,omsg_y+gapj);
+				bar(omsg_x,omsg_y,omsg_x+GAPI,omsg_y+GAPJ);
 				omsg_x = msg_x;
 				omsg_y = msg_y;
 			}
@@ -164,8 +408,11 @@ void status_check(int *x,int *y,struct Lords *pl,int player){
 		
 		real_x=relative_x = msg.x;
 		real_y=relative_y = msg.y;
-		translate_to_relative_position(&relative_x,&relative_y);
-		pos_status = mouse_translate(relative_x,relative_y,pl,player);
+		pos_status = more_mouse_translate(real_x,real_y,pl,player);
+		if(pos_status == 2){
+			show_diplomacy();
+			continue;
+		}
 		translate_to_relative_position(&real_x,&real_y);
 		translate_to_real_position(&real_x,&real_y);
 		translate_to_real_position(&old_x,&old_y);
@@ -173,9 +420,9 @@ void status_check(int *x,int *y,struct Lords *pl,int player){
 		
 		if(pos_status == 1){
 			setfillstyle(SOLID_FILL,EGERGB(0x21, 0x96, 0xF3));
-			bar(old_x,old_y,old_x+gapi,old_y+gapj);
+			bar(old_x,old_y,old_x+GAPI,old_y+GAPI);
 			setfillstyle(SOLID_FILL,0x1976D2);
-			bar(real_x,real_y,real_x+gapi,real_y+gapj);
+			bar(real_x,real_y,real_x+GAPI,real_y+GAPI);
 		}
 		
 	}	
