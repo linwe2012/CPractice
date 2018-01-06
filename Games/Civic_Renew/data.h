@@ -26,5 +26,6 @@ extern int r[2][MAX];
 extern char survivor;
 void datashuffle(struct Map a[MAXH][MAXH]);
 void init(struct Lords *pl, struct Map m[MAXH][MAXH]);
+void player_reinforce(int wealth,int force);
 
 #endif

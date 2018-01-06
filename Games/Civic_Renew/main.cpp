@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
 	setbkcolor(BGCOLOR);
 	
 	init(lords,map);
+	player_reinforce(200,1000);
 	rank(lords);
 	inidraw(lords,0);
 	update(lords,0);
@@ -44,7 +45,7 @@ int main(int argc, char** argv) {
 }
 
 void update_title(struct Lords *pl,int player);
-void update_force_one(int x,int y,struct Lords *pl,int player);
+void update_force_one(int x,int y,struct Lords *pl,int player,int ifselect);
 
 void inidraw(struct Lords *pl, int player){
 	int i,j,a,b;
@@ -77,7 +78,7 @@ void inidraw(struct Lords *pl, int player){
 	outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul");
 	i = pos % 100;
 	j = pos / 100;
-	update_force_one(i,j,pl,player);
+	update_force_one(i,j,pl,player,0);
 }
 
 void update_title(struct Lords *pl,int player){
@@ -90,13 +91,21 @@ void update_title(struct Lords *pl,int player){
 	
 	outtextxy(WIDTH/2,4,s);
 }
-void update_force_one(int x,int y,struct Lords *pl,int player){
+void update_force_one(int x,int y,struct Lords *pl,int player,int ifselect){
 	int f;
 	f = map[x][y].force;
 	x = 10 + x * GAPI1;
 	y = 50 + y * GAPJ1;
-	
-	setfillstyle(SOLID_FILL,EGERGB(0x21, 0x96, 0xF3));
+	if(ifselect){
+		setfillstyle(SOLID_FILL,SELECTED);
+		setcolor(WHITE);
+		setfontbkcolor(SELECTED);
+	}
+	else{
+		setfillstyle(SOLID_FILL,EGERGB(0x21, 0x96, 0xF3));
+		setcolor(0xBBDEFB);
+		setfontbkcolor(UNSELECTED);
+	}
 	bar(x,y,x+GAPI,y+GAPJ);
 
 	
@@ -146,10 +155,8 @@ void launch_convertion(int x1,int y1,struct Lords *pl,int player){
 	r[1][temp + i] = temppower;
 	r[0][temp + i] = lor;
 	
-	update_force_one(x1,y1,pl,player);
+	update_force_one(x1,y1,pl,player,0);
 	update_title(pl,player);
-	
-	
 }
 
 //processing mouse message////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -223,6 +230,52 @@ int more_mouse_translate(int x,int y,struct Lords *pl,int player){
 		}
 	}
 }
+// x,y are real position,while sx,sy should be relative.
+int selected_mouse_translate(int x,int y,int sx,int sy,struct Lords *pl,int player){
+	int i;
+	int pos;
+	int realpos;
+	int spos = sx + sy*100 + 1;
+	if((x>=WIDTH-100 && x<=WIDTH) && (y>=10 && y<= 50))
+		return 2;
+	
+	x = (x - 10)/GAPI;
+	y = (y - 50)/GAPJ;
+	
+	pos = x + y*100 + 1;
+	i = 0;
+	
+	while( (realpos = (pl + player)->own[i]) != 0){
+		if(((pl + player)->own[i]) == pos){
+			if( (realpos == spos + 100 || realpos == spos - 100 || realpos == spos + 1||realpos == spos -1)){
+				return 3;
+			}
+			else if(realpos == spos + 101 || realpos == spos + 99 || realpos == spos - 101||realpos == spos -99){
+				return 3;
+			}
+		
+			return 1;
+		}
+		i++;
+	}
+	
+	realpos = sx + sy*100 +1;
+	if(realpos == pos + 100 || realpos == pos - 100 || realpos == pos + 1||realpos == pos -1){
+		return 0;
+	}
+	else if(realpos == pos + 101 || realpos == pos + 99 || realpos == pos - 101||realpos == pos -99){
+		return 0;
+	}
+		
+	else if(1){
+		return -1;
+	}
+	
+}
+// 3: abut selected and is owned
+// 0: abut selected but not owned
+// 1: not abut but is owned
+// 2: diplomacy map
 
 
 int simple_mouse_translate(int x,int y){
@@ -282,18 +335,23 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 	int pos2;
 	int flag = 0;
 	int lor,emy_force;
+	int ifinpos=1;
 	
 	setfillstyle(SOLID_FILL,BGCOLOR);
 	bar(0,HIGH - 45,WIDTH,HIGH - 25);
-	outtextxy(WIDTH/2,HIGH - 45,"Press Enter to Cancel Selection. Careful! You can't undo.'");
+	setcolor(LIGHTGREY);
+	outtextxy(WIDTH/2,HIGH - 45,"Press Enter to Cancel Selection. Careful! You can't undo.");
+	update_force_one(ox,oy,pl,player,1);
 	delay_ms(1000);
 	while(1){
 	for(; is_run(); delay_jfps(120))
 		{
 			if(kbhit() && (keyboardmsg = getch()) ){
-				if(keyboardmsg == '\n'){
+				if(keyboardmsg == '\n' || keyboardmsg == 'q' || keyboardmsg == 'Q'){
 					bar(0,HIGH - 45,WIDTH,HIGH - 25);
+					setcolor(LIGHTGREY);
 					outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
+					update_force_one(ox,oy,pl,player,0);
 					return;
 				}
 				else if(keyboardmsg == ' '){
@@ -303,7 +361,7 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 							map[ox][oy].force += adder;
 							(pl+player)->wealth -= adder;
 							update_title(pl,player);
-							update_force_one(ox,oy,pl,player);
+							update_force_one(ox,oy,pl,player,1);
 							delay_ms(DELAY);
 							if(!keystate(' ')){
 								continue;
@@ -314,14 +372,18 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 						continue;
 					}
 						
-					for(;keystate(' '); delay_ms(100))
+					for(;keystate(' '); delay_jfps(60))
 					{
 						if((pl+player)->wealth > 0){
 							(pl+player)->force += adder;
 							map[ox][oy].force += adder;
 							(pl+player)->wealth -= adder;
 							update_title(pl,player);
-							update_force_one(ox,oy,pl,player);
+							update_force_one(ox,oy,pl,player,1);
+							if(keystate(0x01)){
+								delay_ms(DELAY);
+								break;
+							}
 						}
 						else{
 							delay_ms(DELAY);
@@ -333,33 +395,51 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 					continue;
 				}
 			}
+			
 			if(mousemsg() && (msg = GetMouseMsg()).uMsg == WM_LBUTTONDOWN)
 				break;
 			
 			msg_x = (msg.x - 10)/GAPI;
 			msg_y = (msg.y - 50)/GAPJ;
 			
-			if(msg_x == ox && msg_y ==oy)
+			if(msg_x == ox && msg_y ==oy){
+				ifinpos = 1;
 				continue;
+				
+			}
+				
 			
 			
-			pos_status = mouse_translate(msg_x,msg_y,pl,player);
+			pos_status = selected_mouse_translate(msg.x,msg.y,ox,oy,pl,player);
 			
 			msg_x = 10 + msg_x * GAPI1;
 			msg_y = 50 + msg_y * GAPJ1; // translate into real position
+			// 3: abut selected and is owned
+			// 0: abut selected but not owned
+			// 1: not abut but is owned
+			//-1: not abut, not owned
+			// 2: diplomacy map
 			
-			if( (pos_status == 0 || pos_status == 1)&& (!flag || (omsg_x != msg_x || omsg_y != msg_y)  )){
+			if( (pos_status == 0 || pos_status == 3)&& (!flag || (omsg_x != msg_x || omsg_y != msg_y)  )){
 				flag = 1;
 				setfillstyle(SOLID_FILL,0x90CAF9);
 				bar(msg_x,msg_y,msg_x+GAPI,msg_y+GAPJ);
-				if(pos_status == 1){
+				
+				if(ifinpos == 1){
+					ifinpos = 0;
+					update_force_one(ox,oy,pl,player,1);
+				}
+				
+				//don't know if it is useful///////
+				if(pos_status == 3){
 					relative_x = (msg.x - 10)/GAPI;
 					relative_y = (msg.y - 50)/GAPJ;
 				}
-				if(old_pos == 1){
+				///////////////////////////////////
+				if(old_pos == 3){
 					setfillstyle(SOLID_FILL,UNSELECTED);
 					bar(omsg_x,omsg_y,omsg_x+GAPI,omsg_y+GAPJ);
-					update_force_one(relative_x,relative_y,pl,player);
+					update_force_one(relative_x,relative_y,pl,player,0);
 						
 				}
 				else{
@@ -371,14 +451,23 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 				omsg_y = msg_y;
 				old_pos = pos_status;
 			}
-			else if(flag && pos_status == -1 && old_pos != 1){
-				flag = 0;
-				setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
-				bar(omsg_x,omsg_y,omsg_x+GAPI,omsg_y+GAPJ);
+			else if(flag && pos_status == -1){
+				ifinpos = flag = 0;
+				if(old_pos == 3){
+					setfillstyle(SOLID_FILL,UNSELECTED);
+					bar(omsg_x,omsg_y,omsg_x+GAPI,omsg_y+GAPJ);
+					update_force_one(relative_x,relative_y,pl,player,0);
+				}
+				else{
+					setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
+					bar(omsg_x,omsg_y,omsg_x+GAPI,omsg_y+GAPJ);
+				}
 				omsg_x = msg_x;
 				omsg_y = msg_y;
 				old_pos = pos_status;
 			}
+			old_pos = pos_status;
+			update_force_one(ox,oy,pl,player,1);
 		}
 		x = msg.x;
 		y = msg.y;
@@ -399,16 +488,16 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 				map[ox][oy].force -= adder;
 				map[msg_x][msg_y].force += adder;
 				adder ++;
-				update_force_one(ox,oy,pl,player);
-				update_force_one(msg_x,msg_y,pl,player);
+				update_force_one(ox,oy,pl,player,1);
+				update_force_one(msg_x,msg_y,pl,player,0);
 				delay_ms(DELAY);
 				if((msg = GetMouseMsg()).uMsg != WM_LBUTTONUP){
 					continue;
 				}
 			}
 			else{
-				update_force_one(ox,oy,pl,player);
-				 update_force_one(msg_x,msg_y,pl,player);
+				update_force_one(ox,oy,pl,player,1);
+				update_force_one(msg_x,msg_y,pl,player,0);
 				continue;
 				}
 			for(; is_run() && (msg = GetMouseMsg()).uMsg != WM_LBUTTONUP ; delay_jfps(120)){
@@ -416,15 +505,15 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 						map[ox][oy].force -= adder;
 						map[msg_x][msg_y].force += adder;
 						adder ++;
-						update_force_one(ox,oy,pl,player);
-				 		update_force_one(msg_x,msg_y,pl,player);
+						update_force_one(ox,oy,pl,player,1);
+				 		update_force_one(msg_x,msg_y,pl,player,0);
 					}
 					else{
 						adder = map[ox][oy].force;
 						map[ox][oy].force = 0;
 						map[msg_x][msg_y].force += adder;
-						update_force_one(ox,oy,pl,player);
-				 		update_force_one(msg_x,msg_y,pl,player);
+						update_force_one(ox,oy,pl,player,1);
+				 		update_force_one(msg_x,msg_y,pl,player,0);
 						break;
 					}
 				
@@ -435,7 +524,7 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 			adder = 1;
 			//map[msg_x][msg_y].force;
 			
-			if(map[ox][oy].force >= adder){
+			if(map[ox][oy].force >= adder && map[msg_x][msg_y].status != player){
 				map[ox][oy].force -= adder;
 				map[msg_x][msg_y].force -= adder;
 				((pl + player)->force)--;
@@ -447,12 +536,15 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 					delay_ms(DELAY);
 					continue;
 				}
-				update_force_one(ox,oy,pl,player);
+				update_force_one(ox,oy,pl,player,1);
 				delay_ms(DELAY);
 				if(!keystate(0x01)){
 					delay_ms(DELAY);
 					continue;
 				}
+			}
+			else if(map[msg_x][msg_y].status == player){
+				continue;
 			}
 			else{
 				if(map[ox][oy].force == 0){
@@ -463,13 +555,13 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 				map[msg_x][msg_y].force -=1;
 				((pl + player)->force)--;
 				update_title(pl,player);
-				update_force_one(ox,oy,pl,player);
+				update_force_one(ox,oy,pl,player,1);
 				delay_ms(DELAY);
 				continue;
 			}
 			
 			for(; is_run() && keystate(0x01); delay_jfps(120)){
-					if(map[ox][oy].force >= adder){
+					if(map[ox][oy].force >= adder ){
 						map[ox][oy].force -= adder;
 						map[msg_x][msg_y].force -= adder;
 						((pl + player)->force)-=adder;
@@ -482,7 +574,7 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 							delay_ms(DELAY);
 							break;
 						}
-						update_force_one(ox,oy,pl,player);
+						update_force_one(ox,oy,pl,player,1);
 						
 					}
 					else{
@@ -502,7 +594,7 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 							delay_ms(DELAY);
 							break;
 						}
-						update_force_one(ox,oy,pl,player);
+						update_force_one(ox,oy,pl,player,1);
 						delay_ms(DELAY);
 						break;
 					}
@@ -603,9 +695,9 @@ void status_check(int *x,int *y,struct Lords *pl,int player){
 			outtextxy((2 * relative_x+GAPI)/2,(2 * relative_y + GAPJ)/2,s);
 			mousecheck_inpos(relative_x,relative_y,pl,player);
 			
-			setfillstyle(SOLID_FILL,BGCOLOR);
-			bar(0,HIGH - 45,WIDTH,HIGH - 25);
-			outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
+			//setfillstyle(SOLID_FILL,BGCOLOR);
+			//bar(0,HIGH - 45,WIDTH,HIGH - 25);
+			//outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
 			continue;
 		}
 		
