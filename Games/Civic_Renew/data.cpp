@@ -134,6 +134,15 @@ void datashuffle(struct  Map a[MAXH][MAXH]){
 	}
 }
 
+//only for test purpose
+void player_reinforce(int wealth,int force){
+	int a;
+	lords[0].wealth += wealth;
+	lords[0].force += force;
+	a = lords[0].own[0];
+	a--;
+	map[a%100][a/100].force += force;
+}
 
 /*might come to be useful...or not*////////////////////////////////////////////////////////////////////////
 /*assign lands to lords*/
