@@ -92,7 +92,7 @@ int auto_attack(int x1,int y1,int x2,int y2,int lor,struct Lords *pl)
 				else
 					return 1;
 	}
-	return -1;                        //not able to attck;
+	return -1;                        //not able to attack;
 }
 
 /*x1 for attacker, and x2 for defender*/

@@ -118,6 +118,7 @@ void update_force_one(int x,int y,struct Lords *pl,int player,int ifselect){
 void update(struct Lords *pl,int player){
 	int i,j,a,b,k;
 	int pos = (pl + player)->own[0];
+	int flag;
 	/*
 	LOGFONTA f;
 	/*preset front*/
@@ -128,21 +129,25 @@ void update(struct Lords *pl,int player){
 	setfont(&f);                          
 	*/
 	cleardevice();
+	setbkcolor(BGCOLOR);
 	setfillstyle(SOLID_FILL,0x9E9E9E);
-	outtextrect(WIDTH-100,25,90,25,"Diplomacy");
+	
 	for(i=10,a=0;i<WIDTH - GAPI;i+= GAPI + 1,a++){
 		for(j=50,b=0;j<HIGH - GAPJ;j+=GAPJ + 1,b++){
 			pos = a+b*100+1;
-			k = 0;
+			flag = k = 0;
 			while((pl + player)->own[k]){
 				if(pos == (pl + player)->own[k]){
 					setfillstyle(SOLID_FILL,EGERGB(0x21, 0x96, 0xF3));
 					bar(i,j,i+GAPI,j+GAPJ);
 					setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
-					continue;
+					flag = 1;
+					break;
 				}
+				k++;
 			}
-			bar(i,j,i+GAPI,j+GAPJ);
+			if(!flag)
+				bar(i,j,i+GAPI,j+GAPJ);
 		}
 	}
 	outtextrect(WIDTH/3+35,HIGH-20,WIDTH,HIGH-5,"All rights reserved.");
@@ -151,6 +156,9 @@ void update(struct Lords *pl,int player){
 	i = pos % 100;
 	j = pos / 100;
 	update_force_one(i,j,pl,player,0);
+	update_title(pl,PLAYER);
+	setcolor(LIGHTGREY);
+	outtextrect(WIDTH-100,25,90,25,"Diplomacy");
 }
 
 /*x1 & y1 is our defeater's coordinate
@@ -379,7 +387,7 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 	setfillstyle(SOLID_FILL,BGCOLOR);
 	bar(0,HIGH - 45,WIDTH,HIGH - 25);
 	setcolor(LIGHTGREY);
-	outtextxy(WIDTH/2,HIGH - 45,"Press Enter to Cancel Selection. Careful! You can't undo.");
+	outtextxy(WIDTH/2,HIGH - 45,"Press q to Cancel Selection. Careful! You can't undo.");
 	update_force_one(ox,oy,pl,player,1);
 	delay_ms(1000);
 	while(1){
@@ -389,7 +397,7 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 				if(keyboardmsg == '\n' || keyboardmsg == 'q' || keyboardmsg == 'Q'){
 					bar(0,HIGH - 45,WIDTH,HIGH - 25);
 					setcolor(LIGHTGREY);
-					outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
+					outtextxy(WIDTH/2,HIGH - 45,"Press q to End this Round. Press M to read the manul.");
 					update_force_one(ox,oy,pl,player,0);
 					fflush(stdin);
 					return;
@@ -656,27 +664,31 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 
 int next_round(struct Lords *pl){
 	int temp;
-	fflush(stdin);
 	setfillstyle(SOLID_FILL,BGCOLOR);
 	bar(0,HIGH - 45,WIDTH,HIGH - 25);
 	setcolor(LIGHTGREY);
 	outtextxy(WIDTH/2,HIGH - 45,"WAIT PLEASE");
-	if(judge(lords) == 1){
+	
+	temp = judge(lords);
+	
+	if(temp == 1){
 		cleardevice();
 		setfillstyle(SOLID_FILL,BGCOLOR);
 		bar(0,0,WIDTH,HIGH);
 		outtextxy(WIDTH/2,HIGH/2,"You win!");
 		return 1;
 	}
-	if(judge(lords) == -1){
+	else if(temp == -1){
 		cleardevice();
 		setfillstyle(SOLID_FILL,BGCOLOR);
 		bar(0,0,WIDTH,HIGH);
 		outtextxy(WIDTH/2,HIGH/2,"How unfortunate!");
 		return -1;
 	}
+	
 	rank(lords);
 	update(lords,PLAYER);
+	
 	return 0;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -711,13 +723,14 @@ int status_check(int *x,int *y,struct Lords *pl,int player){
 						;
 					setfillstyle(SOLID_FILL,BGCOLOR);
 					bar(0,HIGH - 45,WIDTH,HIGH - 25);
-					outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
+					outtextxy(WIDTH/2,HIGH - 45,"Press q to End this Round. Press M to read the manul.");
 					continue;
 				}
-				else if(keyboardmsg == '\n'){
+				else if(keyboardmsg == '\n' || keyboardmsg == 'q' || keyboardmsg == 'Q'){
 					if(next_round(lords)){
 						return 0;
 					}
+					fflush(stdin);
 					continue;
 				}
 				continue;	 
