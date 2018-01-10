@@ -21,9 +21,10 @@
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
 void inidraw(struct Lords *pl, int player);
 void update(struct Lords *pl,int player);
-void status_check(int *x,int *y,struct Lords *pl,int player);
+int status_check(int *x,int *y,struct Lords *pl,int player);
 MOUSEMSG msgshare;            //shared mouse msg
 char s[50];
+int sel;
 
 int main(int argc, char** argv) {
 	int player;
@@ -35,7 +36,6 @@ int main(int argc, char** argv) {
 	player_reinforce(200,1000);
 	rank(lords);
 	inidraw(lords,0);
-	update(lords,0);
 	
 	status_check(&attackin_x,&attacking_y,lords,0);
 	
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 void update_title(struct Lords *pl,int player);
 void update_force_one(int x,int y,struct Lords *pl,int player,int ifselect);
 
-void inidraw(struct Lords *pl, int player){
+void inidraw (struct Lords *pl, int player){
 	int i,j,a,b;
 	int pos = (pl + player)->own[0];
 	/*
@@ -59,6 +59,7 @@ void inidraw(struct Lords *pl, int player){
 	f.lfQuality = ANTIALIASED_QUALITY;  
 	setfont(&f);                          
 	*/
+	
 	pos --;
 	setfillstyle(SOLID_FILL,0x9E9E9E);
 	outtextrect(WIDTH-100,25,90,25,"Diplomacy");
@@ -73,12 +74,13 @@ void inidraw(struct Lords *pl, int player){
 				bar(i,j,i+GAPI,j+GAPJ);
 		}
 	}
-	outtextrect(WIDTH/3+35,HIGH-20,WIDTH,HIGH-5,"Jakiro & Leon. All rights reserved.");
+	outtextrect(WIDTH/3+35,HIGH-20,WIDTH,HIGH-5,"All rights reserved.");
 	settextjustify(CENTER_TEXT, TOP_TEXT);
 	outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul");
 	i = pos % 100;
 	j = pos / 100;
 	update_force_one(i,j,pl,player,0);
+	update_title(lords,PLAYER);
 }
 
 void update_title(struct Lords *pl,int player){
@@ -114,12 +116,41 @@ void update_force_one(int x,int y,struct Lords *pl,int player,int ifselect){
 }
 
 void update(struct Lords *pl,int player){
-	char s[50];
-	setcolor(EGERGB(0x42, 0x42, 0x42));
-	setfontbkcolor(BGCOLOR);
+	int i,j,a,b,k;
+	int pos = (pl + player)->own[0];
+	/*
+	LOGFONTA f;
+	/*preset front*/
+	/*
+	getfont(&f);                      
+	strcpy(f.lfFaceName, "Arial");         
+	f.lfQuality = ANTIALIASED_QUALITY;  
+	setfont(&f);                          
+	*/
+	cleardevice();
+	setfillstyle(SOLID_FILL,0x9E9E9E);
+	outtextrect(WIDTH-100,25,90,25,"Diplomacy");
+	for(i=10,a=0;i<WIDTH - GAPI;i+= GAPI + 1,a++){
+		for(j=50,b=0;j<HIGH - GAPJ;j+=GAPJ + 1,b++){
+			pos = a+b*100+1;
+			k = 0;
+			while((pl + player)->own[k]){
+				if(pos == (pl + player)->own[k]){
+					setfillstyle(SOLID_FILL,EGERGB(0x21, 0x96, 0xF3));
+					bar(i,j,i+GAPI,j+GAPJ);
+					setfillstyle(SOLID_FILL,EGERGB(0x9E, 0x9E, 0x9E));
+					continue;
+				}
+			}
+			bar(i,j,i+GAPI,j+GAPJ);
+		}
+	}
+	outtextrect(WIDTH/3+35,HIGH-20,WIDTH,HIGH-5,"All rights reserved.");
 	settextjustify(CENTER_TEXT, TOP_TEXT);
-	sprintf(s, "Force: %d      Currency: %d      Tech: %d      rank:%d",(pl + player)->force,(pl + player)->wealth,(pl + player)->tech,(pl + player)->rank);
-	outtextxy(WIDTH/2,4,s);
+	outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul");
+	i = pos % 100;
+	j = pos / 100;
+	update_force_one(i,j,pl,player,0);
 }
 
 /*x1 & y1 is our defeater's coordinate
@@ -315,6 +346,14 @@ void show_diplomacy(){
 							bar(i,j,i+GAPI,j+GAPJ);
 					}
 				}
+				i = 0;
+				while(lords[PLAYER].own[i]){
+					j = lords[PLAYER].own[i];
+					j--;
+					update_force_one(j%100,j/100,lords,PLAYER,(sel == j+1));
+					
+					i++;
+				}
 				return;
 			}
 		}
@@ -352,6 +391,7 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 					setcolor(LIGHTGREY);
 					outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
 					update_force_one(ox,oy,pl,player,0);
+					fflush(stdin);
 					return;
 				}
 				else if(keyboardmsg == ' '){
@@ -362,12 +402,14 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 							(pl+player)->wealth -= adder;
 							update_title(pl,player);
 							update_force_one(ox,oy,pl,player,1);
+							fflush(stdin);
 							delay_ms(DELAY);
 							if(!keystate(' ')){
 								continue;
 							}
 						}
 					else{
+						fflush(stdin);
 						delay_ms(DELAY);
 						continue;
 					}
@@ -381,17 +423,19 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 							update_title(pl,player);
 							update_force_one(ox,oy,pl,player,1);
 							if(keystate(0x01)){
+								fflush(stdin);
 								delay_ms(DELAY);
 								break;
 							}
 						}
 						else{
+							fflush(stdin);
 							delay_ms(DELAY);
 							break;
 						}
 						
 					}
-					delay_ms(DELAY);
+					fflush(stdin);
 					continue;
 				}
 			}
@@ -567,6 +611,7 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 						((pl + player)->force)-=adder;
 						adder ++;
 						update_title(pl,player);
+						
 				 		if(map[msg_x][msg_y].force < 0){
 				 			map[msg_x][msg_y].force = -map[msg_x][msg_y].force;
 							launch_convertion(msg_x,msg_y,pl,player);
@@ -580,6 +625,7 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 					else{
 						adder = map[ox][oy].force;
 						if(adder == 0){
+							
 							delay_ms(DELAY);
 							break;
 						}
@@ -591,10 +637,12 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 				 			map[msg_x][msg_y].force = -map[msg_x][msg_y].force;
 							launch_convertion(msg_x,msg_y,pl,player);
 							adder = 0;
+							
 							delay_ms(DELAY);
 							break;
 						}
 						update_force_one(ox,oy,pl,player,1);
+						
 						delay_ms(DELAY);
 						break;
 					}
@@ -605,11 +653,37 @@ void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 		
 	}
 }
+
+int next_round(struct Lords *pl){
+	int temp;
+	fflush(stdin);
+	setfillstyle(SOLID_FILL,BGCOLOR);
+	bar(0,HIGH - 45,WIDTH,HIGH - 25);
+	setcolor(LIGHTGREY);
+	outtextxy(WIDTH/2,HIGH - 45,"WAIT PLEASE");
+	if(judge(lords) == 1){
+		cleardevice();
+		setfillstyle(SOLID_FILL,BGCOLOR);
+		bar(0,0,WIDTH,HIGH);
+		outtextxy(WIDTH/2,HIGH/2,"You win!");
+		return 1;
+	}
+	if(judge(lords) == -1){
+		cleardevice();
+		setfillstyle(SOLID_FILL,BGCOLOR);
+		bar(0,0,WIDTH,HIGH);
+		outtextxy(WIDTH/2,HIGH/2,"How unfortunate!");
+		return -1;
+	}
+	rank(lords);
+	update(lords,PLAYER);
+	return 0;
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-void status_check(int *x,int *y,struct Lords *pl,int player){
+int status_check(int *x,int *y,struct Lords *pl,int player){
 	MOUSEMSG msg;
 	int keyboardmsg;
 	int pos_status;
@@ -628,15 +702,25 @@ void status_check(int *x,int *y,struct Lords *pl,int player){
 		
 		for(; is_run(); delay_jfps(120))
 		{
-			if(kbhit() && ((keyboardmsg = getch()) == 'm' || keyboardmsg == 'M')){
-				setcolor(LIGHTGREY);
-				outtextxy(WIDTH/2,HIGH - 45,"Too lazy to write it. Figure it out yourself! Auf Wiedersehen!");
-				while((msg = GetMouseMsg()).uMsg != WM_LBUTTONDOWN )
-					;
-				setfillstyle(SOLID_FILL,BGCOLOR);
-				bar(0,HIGH - 45,WIDTH,HIGH - 25);
-				outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
-				continue;
+			if(kbhit() && ((keyboardmsg = getch()))  ){
+				if(keyboardmsg == 'm' || keyboardmsg == 'M'){
+					fflush(stdin);
+					setcolor(LIGHTGREY);
+					outtextxy(WIDTH/2,HIGH - 45,"Too lazy to write it. Figure it out yourself! Auf Wiedersehen!");
+					while((msg = GetMouseMsg()).uMsg != WM_LBUTTONDOWN )
+						;
+					setfillstyle(SOLID_FILL,BGCOLOR);
+					bar(0,HIGH - 45,WIDTH,HIGH - 25);
+					outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
+					continue;
+				}
+				else if(keyboardmsg == '\n'){
+					if(next_round(lords)){
+						return 0;
+					}
+					continue;
+				}
+				continue;	 
 			}
 			if(mousemsg() && (msg = GetMouseMsg()).uMsg == WM_LBUTTONDOWN)
 				break;
@@ -691,6 +775,7 @@ void status_check(int *x,int *y,struct Lords *pl,int player){
 			setfillstyle(SOLID_FILL,SELECTED);
 			bar(real_x,real_y,real_x+GAPI,real_y+GAPI);
 			
+			sel = relative_x + relative_y*100 + 1;
 			sprintf(s, "%d",map[relative_x][relative_y].force);
 			outtextxy((2 * relative_x+GAPI)/2,(2 * relative_y + GAPJ)/2,s);
 			mousecheck_inpos(relative_x,relative_y,pl,player);
@@ -698,6 +783,7 @@ void status_check(int *x,int *y,struct Lords *pl,int player){
 			//setfillstyle(SOLID_FILL,BGCOLOR);
 			//bar(0,HIGH - 45,WIDTH,HIGH - 25);
 			//outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul.");
+			sel =  0;
 			continue;
 		}
 		

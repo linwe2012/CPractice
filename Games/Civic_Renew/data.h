@@ -3,6 +3,7 @@
 
 #define MAX 100
 #define MAXH 10
+#define PLAYER 0
 extern struct Lords{
 	int force;
 	int wealth;

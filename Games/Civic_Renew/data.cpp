@@ -40,7 +40,7 @@ struct Map{
 int r[2][MAX];              //first row: power; second row: corresponding lords
 char survivor = MAX;
 
-/* record player's ally, enimies.1 for ally. -1 for enemy. 2 for player*/
+/* record player's ally, enimies. 1 for ally. -1 for enemy. 2 for player*/
 /*When all of the lands are either allies' or player's. Player wins*/
 int playerally[MAXH][MAXH];
 

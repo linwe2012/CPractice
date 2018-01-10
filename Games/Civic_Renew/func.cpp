@@ -6,6 +6,7 @@
 
 void sort(int *a,int *b,int left,int right);
 void swap(int *a,int b,int c);
+void getrid(struct Lords *pl, struct Map m[MAXH][MAXH],int x1,int y1,int x2,int y2,int lor1,int lor2);
 
 /*rank lords and return player's rank*/
 int rank(struct Lords *pl){
@@ -14,7 +15,10 @@ int rank(struct Lords *pl){
 	int lor, ret;
 	char count = 1;
 	for(i=0;i<MAX;i++){
-		r[0][i] = (int) ((int)pl->force*RATE + (int)pl->tech + (int)pl->wealth*RATE + ((int)(pl++->cond))*RATE);
+		if(pl->own[0] != 0)
+			r[0][i] = (int) ((int)pl->force*RATE + (int)pl->tech + (int)pl->wealth*RATE + ((int)(pl++->cond))*RATE);
+		else
+			r[0][i] = 0;
 	}
 	sort(r[0],r[1],0,MAX-1);
 	for(i=0;i<MAX;i++){
@@ -58,13 +62,73 @@ void swap(int *a,int b,int c){
 	a[c] = temp;
 }
 
+void if_success(){
+	;
+}
+
+int win(struct Lords *pl){
+	int i,j;
+	if(pl->own[0] == 0){
+		return -1;
+	}
+	for(i=0;i<MAXH;i++){
+		for(j=0;j<MAXH;j++){
+			if(playerally[i][j] <=0 ){
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+int auto_attack(int x1,int y1,int x2,int y2,int lor,struct Lords *pl)
+{
+	if(map[x1][y1].status != lor && (pl+lor)->ally[map[x2][y2].status] == -1 && x1>=0 && y1>=0){
+				map[x2][y2].force -= map[x1][y1].force/2;
+				if(map[x2][y2].force < 0){
+					getrid(pl,map,x1,y1,x2,y2,map[x1][y1].status,map[x2][y2].status);
+					return 0;
+				}
+				else
+					return 1;
+	}
+	return -1;                        //not able to attck;
+}
 
 /*x1 for attacker, and x2 for defender*/
-void judge(struct Lords *pl, struct Map m[MAXH][MAXH],int x1,int y1,int x2,int y2){
-	int lor1 = m[x1][y1].status;
-	int lor2 = m[x2][y2].status;
+int judge(struct Lords *pl){
+	int i,j,k;
+	int temp,res;
+	int x,y;
+	int lor = MAX;
+	while((r[lor])==0 ){
+		lor--;
+	}
+	while(lor){
+		i = 0;
+		
+		res = (pl + lor)->wealth;
+		(pl + lor)->wealth = 0;
+		(pl + lor)->force += res;
+		while(temp = ((pl + lor)->own[i])){
+			temp--;
+			x = temp % 100;
+			y = temp / 100;
+			
+			auto_attack(x,y,x+1,y,lor,lords);
+			auto_attack(x,y,x,y+1,lor,lords);
+			auto_attack(x,y,x-1,y,lor,lords);
+			auto_attack(x,y,x,y-1,lor,lords);
+			
+			i++;
+		}
+		
+		
+		lor--;
+	}
+	res = win(lords);
+	return res;
 	
-	;
 }
 
 // same as above
@@ -79,6 +143,9 @@ void getrid(struct Lords *pl, struct Map m[MAXH][MAXH],int x1,int y1,int x2,int 
 	j = i;
 	for(;(pl + lor2)->own[i];i++){
 		(pl + lor2)->own[i-1] = (pl + lor2)->own[i];
+	}
+	if((pl + lor2)->own[i] == 0){
+		survivor--;
 	}
 }
 
