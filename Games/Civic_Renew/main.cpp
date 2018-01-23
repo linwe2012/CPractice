@@ -419,6 +419,116 @@ int bound_check(int x,int y){
 }
 //0:out of boundary
 
+void cheat_draw(char *s,int status,char **help){
+	setfillstyle(SOLID_FILL,BGCOLOR);
+	bar(3,HIGH-20,WIDTH-3,HIGH-5);
+	setfontbkcolor(BGCOLOR);
+	switch(status){
+		case -1:{
+			outtextxy(3,HIGH - 45,"unsupported command");
+			break;
+		}
+		case 10:
+			{
+				outtextxy(3,HIGH - 45,help[0]);
+				break;
+			}
+		case 20:
+			{
+				outtextxy(3,HIGH - 45,help[1]);
+				break;
+			}
+		case 30:
+			{
+				outtextxy(3,HIGH - 45,help[2]);
+				break;
+			}
+		default:
+			{
+				break;
+			}
+	}
+	
+	
+	setfillstyle(SOLID_FILL,LIGHTGREY);
+	bar(3,HIGH-20,WIDTH-3,HIGH-5);
+	setfontbkcolor(LIGHTGREY);
+	outtextxy(5,HIGH-20,s);
+	/*
+	outtextxy(WIDTH/2,HIGH - 45,"Press Enter to End this Round. Press M to read the manul");
+	i = pos % 100;
+	j = pos / 100;
+	update_force_one(i,j,pl,player,0);
+	update_title(pl,PLAYER);
+	setcolor(LIGHTGREY);
+	outtextrect(WIDTH-100,25,90,25,"Diplomacy");
+	*/
+}
+void cheat(){
+	int keyboardmsg;
+	int i;
+	char buf[100];
+	int flag;
+	int status,pre_st;
+	char *help[] ={"add command: currency, force, tech","minus command: currency, force, tech","claim command: x y","add, minus, claim. Cheat mode is intended for debuging purposes."};
+	int num;
+	//10: add ---- 11 add currency    12 add force   13 add tech
+	//20: minus
+	//30: claim (x,y)
+	//40:
+	// 0:command parade
+	//-1:unsupported command;
+	settextjustify(LEFT_TEXT, TOP_TEXT);
+	i = 0;
+	flag = 1;
+	buf[i++] = '\\';
+	
+	while(flag){
+		keyboardmsg = getch();
+		buf[i] = keyboardmsg;
+		if(buf[i] <='9' && buf[i]>='0'){
+			num = num*10;
+			num += buf[i] - '0';
+			cheat_draw(buf,status,NULL);
+			continue;
+		}
+		switch(keyboardmsg){
+			case VK_BACK:
+				{
+					i--;
+					if(buf[i] <='9' && buf[i]>='0'){
+						num /= 10;
+					}
+					else if(buf[i] == 'a' && status == 10){
+						status == 0;
+					}
+					buf[--i] = '\0';
+					cheat_draw(buf,status,help);
+					break;
+				}
+			case VK_SPACE:
+				{
+					buf[i] = ' ';
+				}
+			case VK_ESCAPE:
+			case VK_RETURN:
+				{
+					
+					
+				}
+			default:
+			{
+				cheat_draw(buf,-1,NULL);
+				break;
+			}
+		}
+		
+		i++;
+	}
+	settextjustify(CENTER_TEXT, TOP_TEXT);
+	outtextrect(WIDTH/3+35,HIGH-20,WIDTH,HIGH-5,"All rights reserved.");
+}
+
 void mousecheck_inpos(int ox,int oy,struct Lords *pl,int player){
 	int keyboardmsg;
 	MOUSEMSG msg;
