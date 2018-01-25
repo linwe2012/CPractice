@@ -419,6 +419,116 @@ int bound_check(int x,int y){
 }
 //0:out of boundary
 
+
+//10: add ---- 11 add currency    12 add force   13 add tech
+	//20: minus
+	//30: claim (x,y)
+	//40:
+	// 0:command parade
+	//-1:unsupported command;
+int cheat_cmd(int cmd,int num,int numflag,int *s){
+	int lor=0;
+	int wordflag=0;
+	int amflag;
+	int x,y;
+	if(cmd == 10){
+		lor = 3;
+		amflag = 1;
+	}
+	else if(cmd == 20){
+		amflag = -1;
+		lor = 4;
+	}else if(cmd == 30){
+		lor = 5;
+	}
+	s += lor;
+	lor = 0;
+	while(*s++ == ' '){
+		;
+	}
+	while(*s++ != ' ')
+		;
+	while(*s++ == ' ')
+		;
+	while(*s != ' '){
+		if(*s<='9' || *s>='0'){
+			lor+= lor*10 + *s-'0';
+		}
+		else{
+			return -1;
+		}
+		s++;
+	}
+	while(*s++ == ' ')
+		;
+	if(--s == '\0'){
+		;
+	}
+	else{
+		x = lor;
+		lor = -1;
+		y = 0;
+		while(*s != ' '){
+			if(*s<='9' || *s>='0'){
+				y+= y*10 + *s-'0';
+			}
+			else{
+				return -1;
+			}
+			s++;
+		}
+	}
+	while(*s++ == ' ')
+		;
+	if(--s != '\0'){
+		return -1;
+	}
+	
+	switch(cmd)
+	{
+		case 0:{
+			return 0;
+			break;
+		}
+		case 21: case 11:{
+			if(numflag){
+				if(lor == -1){
+					lords[ map[x][y].status ].wealth += amflag * num;
+				}
+				else{
+					lords[lor].wealth += amflag * num;
+				}
+			}
+			else{
+				lords[0].wealth += amflag * num;
+				update_title(lords,PLAYER);
+			}
+			break;
+		}
+		case 22: case 12:{
+			
+			break;
+		}
+		case 23: case 13:{
+			if(numflag){
+				if(lor == -1){
+					lords[ map[x][y].status ].tech += amflag * num;
+				}
+				else{
+					lords[lor].tech += amflag * num;
+				}
+			}
+			else{
+				lords[0].tech += amflag * num;
+			}
+			break;
+		}
+	}
+	
+	update_title(lords,PLAYER);
+	return 0;
+}
+
 void cheat_draw(char *s,int status,char **help){
 	setfillstyle(SOLID_FILL,BGCOLOR);
 	bar(3,HIGH-20,WIDTH-3,HIGH-5);
@@ -470,8 +580,8 @@ void cheat(){
 	char buf[100];
 	int flag;
 	int status,pre_st;
-	char *help[] ={"add command: currency, force, tech","minus command: currency, force, tech","claim command: x y","add, minus, claim. Cheat mode is intended for debuging purposes."};
-	int num;
+	char *help[] ={"add currency / force / tech (lords/position in x,y)","minus command: currency, force, tech","claim command: x y","add, minus, claim. Cheat mode is intended for debuging purposes."};
+	int num,numflag;
 	//10: add ---- 11 add currency    12 add force   13 add tech
 	//20: minus
 	//30: claim (x,y)
@@ -482,26 +592,43 @@ void cheat(){
 	i = 0;
 	flag = 1;
 	buf[i++] = '\\';
-	
+	numflag = 0;//no number now
 	while(flag){
 		keyboardmsg = getch();
 		buf[i] = keyboardmsg;
 		if(buf[i] <='9' && buf[i]>='0'){
-			num = num*10;
-			num += buf[i] - '0';
-			cheat_draw(buf,status,NULL);
-			continue;
+			if(!numflag){
+				num = num*10;
+				num += buf[i] - '0';
+				cheat_draw(buf,status,NULL);
+				continue;
+			}
+			else{
+				;
+			}
 		}
 		switch(keyboardmsg){
 			case VK_BACK:
 				{
 					i--;
 					if(buf[i] <='9' && buf[i]>='0'){
-						num /= 10;
+						if(numflag){
+							;
+						}
+						else
+							num /= 10;
 					}
-					else if(buf[i] == 'a' && status == 10){
+					else if(buf[i] == 'a' && status == 10 || (buf[i] == 'm' && status == 20) || (buf[i] == 'c' && status == 30)){
 						status == 0;
 					}
+					else if(buf[i] == ' '){
+						status /= 10;
+						status *= 10;
+						if(numflag){
+							numflag = 0;
+						}
+					}
+					
 					buf[--i] = '\0';
 					cheat_draw(buf,status,help);
 					break;
@@ -509,11 +636,19 @@ void cheat(){
 			case VK_SPACE:
 				{
 					buf[i] = ' ';
+					if(num != 0){
+						numflag = 1;
+					}
 				}
 			case VK_ESCAPE:
 			case VK_RETURN:
 				{
-					
+					if(status == 0){
+						flag = 0;
+					}
+					else{
+						
+					}
 					
 				}
 			default:
